@@ -77,7 +77,7 @@ def main():
     model = build_segmentation_model_from_cfg(config)
     logger.info("Model:\n{}".format(model))
 
-    model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    #model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
     model = model.to(device)
 
     if comm.get_world_size() > 1:
@@ -137,6 +137,7 @@ def main():
             data_time.update(time.time() - start_time)
 
             image = data.pop('image')
+            image = image.to(device)
             out_dict = model(image, data)
             loss = out_dict['loss']
             optimizer.zero_grad()
@@ -182,7 +183,8 @@ def main():
         raise
     finally:
         if comm.is_main_process():
-            torch.save(model.module.state_dict(),
+           # torch.save(model.module.state_dict(),
+             torch.save(model.state_dict(),
                        os.path.join(config.OUTPUT_DIR, 'final_state.pth'))
         logger.info("Training finished.")
 
