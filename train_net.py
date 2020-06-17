@@ -138,6 +138,7 @@ def main():
 
             image = data.pop('image')
             image = image.to(device)
+            data = move_to(data, device)
             out_dict = model(image, data)
             loss = out_dict['loss']
             optimizer.zero_grad()
@@ -155,7 +156,12 @@ def main():
                       'Time: {batch_time.val:.3f}s ({batch_time.avg:.3f}s)\t' \
                       'Data: {data_time.val:.3f}s ({data_time.avg:.3f}s)\t'.format(
                         i + 1, max_iter, lr, batch_time=batch_time, data_time=data_time)
-                msg += get_loss_info_str(model.module.loss_meter_dict)
+
+                if distributed:
+                    msg += get_loss_info_str(model.module.loss_meter_dict)
+                else:
+                    msg += get_loss_info_str(model.loss_meter_dict)
+
                 logger.info(msg)
             if i == 0 or (i + 1) % config.DEBUG.DEBUG_FREQ == 0:
                 if comm.is_main_process() and config.DEBUG.DEBUG:
@@ -187,6 +193,24 @@ def main():
              torch.save(model.state_dict(),
                        os.path.join(config.OUTPUT_DIR, 'final_state.pth'))
         logger.info("Training finished.")
+
+
+def move_to(obj, device):
+  if torch.is_tensor(obj):
+    return obj.to(device)
+
+  elif isinstance(obj, dict):
+    res = {}
+    for k, v in obj.items():
+      res[k] = move_to(v, device)
+    return res
+  elif isinstance(obj, list):
+    res = []
+    for v in obj:
+      res.append(move_to(v, device))
+    return res
+  else:
+    raise TypeError("Invalid type for move_to")
 
 
 if __name__ == '__main__':
