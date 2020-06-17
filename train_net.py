@@ -16,7 +16,6 @@ from torch import nn
 import torch.backends.cudnn as cudnn
 from torch.nn.parallel import DistributedDataParallel
 
-import _init_paths
 from fvcore.common.file_io import PathManager
 from segmentation.config import config, update_config
 from segmentation.utils.logger import setup_logger
@@ -63,7 +62,8 @@ def main():
     cudnn.benchmark = config.CUDNN.BENCHMARK
     cudnn.deterministic = config.CUDNN.DETERMINISTIC
     cudnn.enabled = config.CUDNN.ENABLED
-    gpus = list(config.GPUS)
+    # gpus = list(config.GPUS)
+    gpus = (0, )    # todo: revise later.
     distributed = len(gpus) > 1
     device = torch.device('cuda:{}'.format(args.local_rank))
 
