@@ -62,8 +62,7 @@ def main():
     cudnn.benchmark = config.CUDNN.BENCHMARK
     cudnn.deterministic = config.CUDNN.DETERMINISTIC
     cudnn.enabled = config.CUDNN.ENABLED
-    # gpus = list(config.GPUS)
-    gpus = (0, )    # todo: revise later.
+    gpus = list(config.GPUS)
     distributed = len(gpus) > 1
     device = torch.device('cuda:{}'.format(args.local_rank))
 
@@ -77,7 +76,8 @@ def main():
     model = build_segmentation_model_from_cfg(config)
     logger.info("Model:\n{}".format(model))
 
-    #model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    if distributed:
+        model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
     model = model.to(device)
 
     if comm.get_world_size() > 1:
@@ -155,7 +155,7 @@ def main():
                 msg = '[{0}/{1}] LR: {2:.7f}\t' \
                       'Time: {batch_time.val:.3f}s ({batch_time.avg:.3f}s)\t' \
                       'Data: {data_time.val:.3f}s ({data_time.avg:.3f}s)\t'.format(
-                        i + 1, max_iter, lr, batch_time=batch_time, data_time=data_time)
+                    i + 1, max_iter, lr, batch_time=batch_time, data_time=data_time)
 
                 if distributed:
                     msg += get_loss_info_str(model.module.loss_meter_dict)
@@ -177,10 +177,15 @@ def main():
                         iteration_to_remove=i - config.DEBUG.KEEP_INTERVAL
                     )
             if i == 0 or (i + 1) % config.CKPT_FREQ == 0:
+                if distributed:
+                    model_state_dict = model.module.state_dict()
+                else:
+                    model_state_dict = model.state_dict()
+
                 if comm.is_main_process():
                     torch.save({
                         'start_iter': i + 1,
-                        'state_dict': model.module.state_dict(),
+                        'state_dict': model_state_dict,
                         'optimizer': optimizer.state_dict(),
                         'lr_scheduler': lr_scheduler.state_dict(),
                     }, os.path.join(config.OUTPUT_DIR, 'checkpoint.pth.tar'))
@@ -189,28 +194,32 @@ def main():
         raise
     finally:
         if comm.is_main_process():
-           # torch.save(model.module.state_dict(),
-             torch.save(model.state_dict(),
+            if distributed:
+                model_state_dict = model.module.state_dict()
+            else:
+                model_state_dict = model.state_dict()
+
+            torch.save(model_state_dict,
                        os.path.join(config.OUTPUT_DIR, 'final_state.pth'))
         logger.info("Training finished.")
 
 
 def move_to(obj, device):
-  if torch.is_tensor(obj):
-    return obj.to(device)
+    if torch.is_tensor(obj):
+        return obj.to(device)
 
-  elif isinstance(obj, dict):
-    res = {}
-    for k, v in obj.items():
-      res[k] = move_to(v, device)
-    return res
-  elif isinstance(obj, list):
-    res = []
-    for v in obj:
-      res.append(move_to(v, device))
-    return res
-  else:
-    raise TypeError("Invalid type for move_to")
+    elif isinstance(obj, dict):
+        res = {}
+        for k, v in obj.items():
+            res[k] = move_to(v, device)
+        return res
+    elif isinstance(obj, list):
+        res = []
+        for v in obj:
+            res.append(move_to(v, device))
+        return res
+    else:
+        raise TypeError("Invalid type for move_to")
 
 
 if __name__ == '__main__':
