@@ -9,7 +9,7 @@ setup the corresponding datasets following
 [datasets/README.md](https://github.com/bowenc0221/panoptic-deeplab/blob/master/datasets/README.md),
 then run:
 ```bash
-python torch.distributed.launch --nproc_per_node=4 train_net.py --cfg configs/Base-Panoptic-DeepLab.yaml
+python -m torch.distributed.launch --nproc_per_node=4 train_net.py --cfg configs/Base-Panoptic-DeepLab.yaml
 ```
 
 To evaluate a model's performance, use
