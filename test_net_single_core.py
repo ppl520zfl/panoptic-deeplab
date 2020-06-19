@@ -17,7 +17,6 @@ import torch
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
 
-import _init_paths
 from fvcore.common.file_io import PathManager
 from segmentation.config import config, update_config
 from segmentation.utils.logger import setup_logger
