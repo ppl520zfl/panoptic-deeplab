@@ -4,7 +4,7 @@ MODEL:
   BACKBONE:
     NAME: "resnet50"
     DILATION: (False, False, True)
-    PRETRAINED: False
+    PRETRAINED: True
   DECODER:
     IN_CHANNELS: 2048
     FEATURE_KEY: "res5"
