@@ -91,6 +91,7 @@ def build_segmentation_model_from_cfg(config):
         )
     elif config.MODEL.BACKBONE.META == 'fasterseg':
         arch_idx = config.MODEL.BACKBONE.NAS.ARCHI
+        # there are two different architectures. we use the student architecture.
         state = torch.load(os.path.join(config.load_path, "arch_%d.pt" % arch_idx))
 
         # TODO: revise the parameters here. according to FasterSeg.
