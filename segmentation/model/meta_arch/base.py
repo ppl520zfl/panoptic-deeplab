@@ -51,7 +51,7 @@ class BaseSegmentationModel(nn.Module):
         input_shape = x.shape[-2:]
 
         # contract: features is a dict of tensors
-        features = self.backbone(x)
+        features = self.backbone(x)     # according to the features outputs to revise.
         pred = self.decoder(features)
         results = self._upsample_predictions(pred, input_shape)
 

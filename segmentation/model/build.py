@@ -4,10 +4,11 @@
 # ------------------------------------------------------------------------------
 
 import torch
-
+import os
 from .backbone import resnet, mobilenet, mnasnet
+from segmentation.model.nas import fasterseg
 from .meta_arch import DeepLabV3, DeepLabV3Plus, PanopticDeepLab
-from .loss import RegularCE, OhemCE, DeepLabCE, L1Loss, MSELoss, CrossEntropyLoss
+from .loss import RegularCE, OhemCE, DeepLabCE, L1Loss, MSELoss
 
 
 def build_segmentation_model_from_cfg(config):
@@ -74,6 +75,7 @@ def build_segmentation_model_from_cfg(config):
         ),
     }
 
+    # todo: replace the ResNet with NSA-architecture.
     if config.MODEL.BACKBONE.META == 'resnet':
         backbone = resnet.__dict__[config.MODEL.BACKBONE.NAME](
             pretrained=config.MODEL.BACKBONE.PRETRAINED,
@@ -87,6 +89,20 @@ def build_segmentation_model_from_cfg(config):
         backbone = mnasnet.__dict__[config.MODEL.BACKBONE.NAME](
             pretrained=config.MODEL.BACKBONE.PRETRAINED,
         )
+    elif config.MODEL.BACKBONE.META == 'fasterseg':
+        arch_idx = config.MODEL.BACKBONE.NAS.ARCHI
+        state = torch.load(os.path.join(config.load_path, "arch_%d.pt" % arch_idx))
+
+        # TODO: revise the parameters here. according to FasterSeg.
+        backbone = fasterseg.Network_Multi_Path_Infer([state["alpha_%d_0" % arch_idx].detach(), state["alpha_%d_1" % arch_idx].detach(),
+                                                       state["alpha_%d_2" % arch_idx].detach()],
+                                                      [None, state["beta_%d_1" % arch_idx].detach(), state["beta_%d_2" % arch_idx].detach()],
+                                                      [state["ratio_%d_0" % arch_idx].detach(), state["ratio_%d_1" % arch_idx].detach(),
+             state["ratio_%d_2" % arch_idx].detach()],
+                                                      num_classes=config.num_classes, layers=config.layers, Fch=config.Fch,
+                                                      width_mult_list=config.width_mult_list, stem_head_width=config.stem_head_width[idx],
+                                                      ignore_skip=arch_idx == 0)
+
     else:
         raise ValueError('Unknown meta backbone {}, please first implement it.'.format(config.MODEL.BACKBONE.META))
 

@@ -59,7 +59,7 @@ def main():
     logger.info(config)
 
     # cudnn related setting
-    cudnn.benchmark = config.CUDNN.BENCHMARK
+    cudnn.benchmark = config.CUDNN.BENCHMARK    # reproducibility
     cudnn.deterministic = config.CUDNN.DETERMINISTIC
     cudnn.enabled = config.CUDNN.ENABLED
     gpus = list(config.GPUS)
@@ -78,7 +78,7 @@ def main():
 
     if distributed:
         model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
-    model = model.to(device)
+    model = model.to(device)    # put model to GPU
 
     if comm.get_world_size() > 1:
         model = DistributedDataParallel(

@@ -48,6 +48,7 @@ class PanopticDeepLab(BaseSegmentationModel):
                  low_level_channels_project, decoder_channels, atrous_rates, num_classes,
                  semantic_loss, semantic_loss_weight, center_loss, center_loss_weight,
                  offset_loss, offset_loss_weight, **kwargs):
+        # todo: v2: NAS-Architecture
         decoder = PanopticDeepLabDecoder(in_channels, feature_key, low_level_channels, low_level_key,
                                          low_level_channels_project, decoder_channels, atrous_rates, num_classes,
                                          **kwargs)

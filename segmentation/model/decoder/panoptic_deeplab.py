@@ -70,7 +70,7 @@ class SinglePanopticDeepLabDecoder(nn.Module):
             l = features[self.low_level_key[i]]
             l = self.project[i](l)
             x = F.interpolate(x, size=l.size()[2:], mode='bilinear', align_corners=True)
-            x = torch.cat((x, l), dim=1)
+            x = torch.cat((x, l), dim=1)    # dense skip connection. / res skip connection
             x = self.fuse[i](x)
 
         return x
@@ -102,7 +102,7 @@ class SinglePanopticDeepLabHead(nn.Module):
         # build classifier
         for key in self.class_key:
             pred[key] = self.classifier[key](x)
-
+        # pred is the semantic logistic. semantic score map
         return pred
 
 
@@ -157,6 +157,6 @@ class PanopticDeepLabDecoder(nn.Module):
             instance = self.instance_decoder(features)
             instance = self.instance_head(instance)
             for key in instance.keys():
-                pred[key] = instance[key]
+                pred[key] = instance[key]   # todo: understand what's the output of instance segmentation.
 
         return pred

@@ -208,19 +208,19 @@ class ResNet(nn.Module):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
-        x = self.maxpool(x)
-        outputs['stem'] = x
+        x = self.maxpool(x)  # pooling x4
+        outputs['stem'] = x     # 1/4, C=64
 
-        x = self.layer1(x)  # 1/4
+        x = self.layer1(x)  # 1/4, C=256
         outputs['res2'] = x
 
-        x = self.layer2(x)  # 1/8
+        x = self.layer2(x)  # 1/8, C=512
         outputs['res3'] = x
 
-        x = self.layer3(x)  # 1/16
+        x = self.layer3(x)  # 1/16, C=1024
         outputs['res4'] = x
 
-        x = self.layer4(x)  # 1/32
+        x = self.layer4(x)  # 1/32, C=2048
         outputs['res5'] = x
 
         return outputs
