@@ -1,18 +1,14 @@
 import numpy as np
-try:
-    from utils.darts_utils import compute_latency_ms_tensorrt as compute_latency
-    print("use TensorRT for latency test")
-except:
-    from utils.darts_utils import compute_latency_ms_pytorch as compute_latency
-    print("use PyTorch for latency test")
 import torch
 import torch.nn as nn
 
 import os.path as osp
+
 latency_lookup_table = {}
 table_file_name = "latency_lookup_table.npy"
 if osp.isfile(table_file_name):
     latency_lookup_table = np.load(table_file_name).item()
+
 
 class ConvBnRelu(nn.Module):
     def __init__(self, in_planes, out_planes, ksize, stride, pad, dilation=1,
@@ -205,13 +201,14 @@ class FeatureFusion(nn.Module):
         return latency
 
     def forward_latency(self, size):
-        name = "ff_H%d_W%d_C%d"%(size[1], size[2], size[0])
+        name = "ff_H%d_W%d_C%d" % (size[1], size[2], size[0])
         if name in latency_lookup_table:
             latency = latency_lookup_table[name]
             return latency, size
         else:
             print("not found in latency_lookup_table:", name)
-            latency = FeatureFusion._latency(size[1], size[2], self._scale*self._Fch*self._branch, self._scale*self._Fch*self._branch)
+            latency = FeatureFusion._latency(size[1], size[2], self._scale * self._Fch * self._branch,
+                                             self._scale * self._Fch * self._branch)
             latency_lookup_table[name] = latency
             np.save("latency_lookup_table.npy", latency_lookup_table)
             return latency, size
@@ -241,7 +238,8 @@ class Head(nn.Module):
                 mid_planes = in_planes // 2
             else:
                 mid_planes = in_planes // 2
-        self.conv_3x3 = ConvBnRelu(in_planes, mid_planes, 3, 1, 1, has_bn=True, norm_layer=norm_layer, has_relu=True, has_bias=False)
+        self.conv_3x3 = ConvBnRelu(in_planes, mid_planes, 3, 1, 1, has_bn=True, norm_layer=norm_layer, has_relu=True,
+                                   has_bias=False)
         self.conv_1x1 = nn.Conv2d(mid_planes, out_planes, kernel_size=1, stride=1, padding=0)
         self._in_planes = in_planes
         self._out_planes = out_planes
@@ -256,14 +254,14 @@ class Head(nn.Module):
         return latency
 
     def forward_latency(self, size):
-        assert size[0] == self._in_planes, "size[0] %d, self._in_planes %d"%(size[0], self._in_planes)
-        name = "head_H%d_W%d_Cin%d_Cout%d"%(size[1], size[2], size[0], self._out_planes)
+        assert size[0] == self._in_planes, "size[0] %d, self._in_planes %d" % (size[0], self._in_planes)
+        name = "head_H%d_W%d_Cin%d_Cout%d" % (size[1], size[2], size[0], self._out_planes)
         if name in latency_lookup_table:
             latency = latency_lookup_table[name]
             return latency, (self._out_planes, size[1], size[2])
         else:
             print("not found in latency_lookup_table:", name)
-            latency = Head._latency(size[1], size[2], self._scale*self._Fch*self._branch, self._out_planes)
+            latency = Head._latency(size[1], size[2], self._scale * self._Fch * self._branch, self._out_planes)
             latency_lookup_table[name] = latency
             np.save("latency_lookup_table.npy", latency_lookup_table)
             return latency, (self._out_planes, size[1], size[2])

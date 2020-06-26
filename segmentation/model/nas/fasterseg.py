@@ -401,6 +401,23 @@ class Network_Multi_Path_Infer(nn.Module):
                         outputs16[branch] = output
                     elif scale == 32:
                         outputs32[branch] = output
+        outputs = {}
+        outputs['stem'] = stem
+        outputs['res2'] = outputs8
+        return outputs
 
-            return stem, outputs8, outputs16, outputs32, outputs
 
+        # revise the feature maps to this format.
+        #         outputs['stem'] = x
+        #
+        #         x = self.layer1(x)
+        #         outputs['res2'] = x
+        #
+        #         x = self.layer2(x)
+        #         outputs['res3'] = x
+        #
+        #         x = self.layer3(x)
+        #         outputs['res4'] = x
+        #
+        #         x = self.layer4(x)
+        #         outputs['res5'] = x

@@ -11,7 +11,7 @@ MODEL:
     DECODER_CHANNELS: 256
     ATROUS_RATES: (6, 12, 18)
   PANOPTIC_DEEPLAB:
-    LOW_LEVEL_CHANNELS: (512, 256)
+    LOW_LEVEL_CHANNELS: (512, 256)  # revise here according to the NAS parameters
     LOW_LEVEL_KEY: ["res3", "res2"]
     LOW_LEVEL_CHANNELS_PROJECT: (64, 32)
     INSTANCE:
@@ -21,6 +21,11 @@ MODEL:
       ASPP_CHANNELS: 256
       NUM_CLASSES: (1, 2)
       CLASS_KEY: ["center", "offset"]
+#  NAS:
+#    ARCHI: 1  # choose student.
+#    LAYERS:
+    # add parameters here.
+
 DATASET:
   ROOT: "./datasets/cityscapes"
   DATASET: "cityscapes_panoptic"

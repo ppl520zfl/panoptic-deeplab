@@ -9,20 +9,8 @@ from thop import profile
 import sys
 import os.path as osp
 from easydict import EasyDict as edict
-C = edict()
-"""please config ROOT_dir and user when u first using"""
-C.repo_name = 'FasterSeg'
-C.abs_dir = osp.realpath(".")
-C.this_dir = C.abs_dir.split(osp.sep)[-1]
-C.root_dir = C.abs_dir[:C.abs_dir.index(C.repo_name) + len(C.repo_name)]
-"""Path Config"""
-def add_path(path):
-    if path not in sys.path:
-        sys.path.insert(0, path)
 
-add_path(osp.join(C.root_dir, 'tools'))
-
-from slimmable_ops import USConv2d, USBatchNorm2d
+from .slimmable_ops import USConv2d, USBatchNorm2d
 
 
 latency_lookup_table = {}
