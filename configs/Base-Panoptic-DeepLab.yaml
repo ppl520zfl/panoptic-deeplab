@@ -2,7 +2,7 @@ MODEL:
   META_ARCHITECTURE: "panoptic_deeplab"
   BN_MOMENTUM: 0.01
   BACKBONE:
-    NAME: "resnet50"
+    NAME: "fasterseg"
     DILATION: (False, False, True)
     PRETRAINED: False    # todo: False.
   DECODER:
@@ -21,10 +21,16 @@ MODEL:
       ASPP_CHANNELS: 256
       NUM_CLASSES: (1, 2)
       CLASS_KEY: ["center", "offset"]
-#  NAS:
-#    ARCHI: 1  # choose student.
-#    LAYERS:
-    # add parameters here.
+  NAS:
+    load_path: " "
+    ARCHI: 1
+    LAYERS: 16
+    num_classes: 19
+    Fch: 12
+    width_mult_list: [4./12, 6./12, 8./12, 10./12, 1.,]
+    stem_head_width: [(8./12, 8./12),]
+
+
 
 DATASET:
   ROOT: "./datasets/cityscapes"
