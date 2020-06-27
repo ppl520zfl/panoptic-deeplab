@@ -404,6 +404,8 @@ class Network_Multi_Path_Infer(nn.Module):
         outputs = {}
         outputs['stem'] = stem
         outputs['res2'] = outputs8
+        outputs['res3'] = outputs16
+        outputs['res5'] = outputs32
         return outputs
 
 
