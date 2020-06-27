@@ -407,7 +407,7 @@ class Network_Multi_Path_Infer(nn.Module):
         outputs['res3'] = outputs16
         outputs['res5'] = outputs32
         return outputs
-
+        #111
 
         # revise the feature maps to this format.
         #         outputs['stem'] = x
