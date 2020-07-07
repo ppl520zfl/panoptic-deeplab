@@ -2,10 +2,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-from .operations import *
-from .genotypes import PRIMITIVES
+from operations import *
+from genotypes import PRIMITIVES
 from pdb import set_trace as bp
-from .seg_oprs import FeatureFusion, Head
+from seg_oprs import FeatureFusion, Head
 
 BatchNorm2d = nn.BatchNorm2d
 
@@ -401,12 +401,44 @@ class Network_Multi_Path_Infer(nn.Module):
                         outputs16[branch] = output
                     elif scale == 32:
                         outputs32[branch] = output
+
+        if self.training:
+            pred8, pred16, pred32 = self.agg_ffm(outputs8, outputs16, outputs32)
+            pred8 = F.interpolate(pred8, scale_factor=8, mode='bilinear', align_corners=True)
+            if pred16 is not None: pred16 = F.interpolate(pred16, scale_factor=16, mode='bilinear', align_corners=True)
+            if pred32 is not None: pred32 = F.interpolate(pred32, scale_factor=32, mode='bilinear', align_corners=True)
+            return pred8, pred16, pred32
+        else:
+            pred8 = self.agg_ffm(outputs8, outputs16, outputs32)
+            out = F.interpolate(pred8, size=(int(pred8.size(2)) * 8, int(pred8.size(3)) * 8), mode='bilinear',
+                                align_corners=True)
+            return out
+
         outputs = {}
         outputs['stem'] = stem
         outputs['res2'] = outputs8
         outputs['res3'] = outputs16
         outputs['res5'] = outputs32
         return outputs
+
+
+
+
+
+        #outputs = {}
+        #outputs['stem'] = stem
+
+
+        #outputs['res2'] = outputs8
+
+
+        #outputs['res3'] = outputs16
+
+
+        #outputs['res5'] = outputs32
+
+        #return outputs
+
 
 
         # revise the feature maps to this format.
@@ -423,3 +455,4 @@ class Network_Multi_Path_Infer(nn.Module):
         #
         #         x = self.layer4(x)
         #         outputs['res5'] = x
+
