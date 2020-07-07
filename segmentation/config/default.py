@@ -43,7 +43,7 @@ _C.MODEL.BACKBONE = CN()
 # resnet
 # mobilenet_v2
 # mnasnet
-_C.MODEL.BACKBONE.META = 'resnet'
+_C.MODEL.BACKBONE.META = 'nas'
 
 # NAME could be
 # For resnet:
@@ -120,6 +120,21 @@ _C.MODEL.PANOPTIC_DEEPLAB.INSTANCE.FOREGROUND_SEG = False
 _C.MODEL.PANOPTIC_DEEPLAB.INSTANCE.FOREGROUND_ARCH = 'v1'
 
 # -----------------------------------------------------------------------------
+# NAS
+# -----------------------------------------------------------------------------
+_C.MODEL.NAS = CN()
+_C.MODEL.NAS.ARCHI = [0, 1]
+_C.MODEL.NAS.LAYERS = 16
+_C.MODEL.NAS.LOAD_PATH = './models'
+_C.MODEL.NAS.NUM_CLASSES = 19
+_C.MODEL.NAS.FCH = 12
+_C.MODEL.NAS.WIDTH_MULT_LIST = [4./12, 6./12, 8./12, 10./12, 1., ]
+_C.MODEL.NAS.STEM_HEAD_WIDTH = [(1, 1), (8./12, 8./12),]
+_C.MODEL.NAS.BRANCH = [2, 2]
+_C.MODEL.NAS.TEACHER_PATH = './models'
+_C.MODEL.NAS.LOAD_EPOCH = "last"
+
+# -----------------------------------------------------------------------------
 # DATASET
 # -----------------------------------------------------------------------------
 _C.DATASET = CN()
@@ -143,6 +158,7 @@ _C.DATASET.SMALL_INSTANCE_WEIGHT = 1
 _C.DATASET.MIN_RESIZE_VALUE = -1
 _C.DATASET.MAX_RESIZE_VALUE = -1
 _C.DATASET.RESIZE_FACTOR = -1
+
 
 # -----------------------------------------------------------------------------
 # Solver
