@@ -36,6 +36,7 @@ def parse_args():
                         help='experiment configure file name',
                         required=True,
                         type=str)
+
     parser.add_argument("--local_rank", type=int, default=0)
     parser.add_argument('opts',
                         help="Modify config options using the command-line",
