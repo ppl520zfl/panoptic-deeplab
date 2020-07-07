@@ -5,10 +5,11 @@
 
 import torch
 import os
-from .backbone import resnet, mobilenet, mnasnet
+from backbone import resnet, mobilenet, mnasnet
 from segmentation.model.nas import fasterseg
-from .meta_arch import DeepLabV3, DeepLabV3Plus, PanopticDeepLab
-from .loss import RegularCE, OhemCE, DeepLabCE, L1Loss, MSELoss
+from meta_arch import DeepLabV3, DeepLabV3Plus, PanopticDeepLab
+from loss import RegularCE, OhemCE, DeepLabCE, L1Loss, MSELoss
+from utils.darts_utils import create_exp_dir, save, plot_op, plot_path_width, objective_acc_lat
 
 
 def build_segmentation_model_from_cfg(config):
@@ -89,20 +90,45 @@ def build_segmentation_model_from_cfg(config):
         backbone = mnasnet.__dict__[config.MODEL.BACKBONE.NAME](
             pretrained=config.MODEL.BACKBONE.PRETRAINED,
         )
-    elif config.MODEL.BACKBONE.META == 'fasterseg':
-        arch_idx = config.MODEL.BACKBONE.NAS.ARCHI
-        # there are two different architectures. we use the student architecture.
-        state = torch.load(os.path.join(config.load_path, "arch_%d.pt" % arch_idx))
+    elif config.MODEL.BACKBONE.META == 'nas':
+        lasts = []
+        for idx, arch_idx in enumerate(config.MODEL.NAS.ARCHI):
+            if config.MODEL.NAS.LOAD_EPOCH == "last":
+                state = torch.load(os.path.join(config.MODEL.NAS.LOAD_PATH, "arch_%d.pt" % arch_idx))
+            else:
+                state = torch.load(os.path.join(config.MODEL.NAS.LOAD_PATH, "arch_%d_%d.pt" % (arch_idx, int(config.load_epoch))))
 
-        # TODO: revise the parameters here. according to FasterSeg.
-        backbone = fasterseg.Network_Multi_Path_Infer([state["alpha_%d_0" % arch_idx].detach(), state["alpha_%d_1" % arch_idx].detach(),
-                                                       state["alpha_%d_2" % arch_idx].detach()],
-                                                      [None, state["beta_%d_1" % arch_idx].detach(), state["beta_%d_2" % arch_idx].detach()],
-                                                      [state["ratio_%d_0" % arch_idx].detach(), state["ratio_%d_1" % arch_idx].detach(),
-             state["ratio_%d_2" % arch_idx].detach()],
-                                                      num_classes=config.num_classes, layers=config.layers, Fch=config.Fch,
-                                                      width_mult_list=config.width_mult_list, stem_head_width=config.stem_head_width[idx],
-                                                      ignore_skip=arch_idx == 0)
+            # TODO: revise the parameters here. according to FasterSeg.
+            backbone = fasterseg.Network_Multi_Path_Infer([state["alpha_%d_0" % arch_idx].detach(), state["alpha_%d_1" % arch_idx].detach(),
+                                                               state["alpha_%d_2" % arch_idx].detach()],
+                                                              [None, state["beta_%d_1" % arch_idx].detach(), state["beta_%d_2" % arch_idx].detach()],
+                                                              [state["ratio_%d_0" % arch_idx].detach(), state["ratio_%d_1" % arch_idx].detach(),
+                     state["ratio_%d_2" % arch_idx].detach()],
+                                                              num_classes=config.MODEL.NAS.NUM_CLASSES, layers=config.MODEL.NAS.LAYERS, Fch=config.MODEL.NAS.FCH,
+                                                              width_mult_list=config.MODEL.NAS.WIDTH_MULT_LIST, stem_head_width=config.MODEL.NAS.STEM_HEAD_WIDTH[idx],
+                                                              ignore_skip=arch_idx==0)
+            mIoU02 = state["mIoU02"];
+            latency02 = state["latency02"];
+            obj02 = objective_acc_lat(mIoU02, latency02)
+            mIoU12 = state["mIoU12"];
+            latency12 = state["latency12"];
+            obj12 = objective_acc_lat(mIoU12, latency12)
+            if obj02 > obj12:
+                last = [2, 0]
+            else:
+                last = [2, 1]
+            lasts.append(last)
+            backbone.build_structure(last)
+
+
+            if arch_idx == 0 and len(config.MODEL.NAS.ARCHI) > 1:
+                partial = torch.load(os.path.join(config.MODEL.NAS.TEACHER_PATH, "weights%d.pt" % arch_idx))
+                state = backbone.state_dict()
+                pretrained_dict = {k: v for k, v in partial.items() if k in state}
+                state.update(pretrained_dict)
+                backbone.load_state_dict(state)
+
+
 
     else:
         raise ValueError('Unknown meta backbone {}, please first implement it.'.format(config.MODEL.BACKBONE.META))
